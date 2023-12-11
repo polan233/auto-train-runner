@@ -1,0 +1,19 @@
+# 忽略 node_modules 文件夹
+front-end/node_modules/
+
+# 忽略编译产生的文件夹和文件
+front-end/dist/
+front-end/build/
+
+# 忽略 Vue CLI 3.x 产生的文件夹
+front-end/.vue/
+
+# 忽略开发过程中生成的临时文件
+front-end/.DS_Store
+front-end/.idea/
+
+# 如果使用 TypeScript，忽略编译产生的 .js 文件
+front-end/*.js
+
+# 如果使用 TypeScript，忽略编译产生的 .d.ts 文件
+front-end/*.d.ts
