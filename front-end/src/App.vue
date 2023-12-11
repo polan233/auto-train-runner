@@ -1,24 +1,34 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <h2>命令行程序自动运行系统</h2>
+    <el-container>
+      <el-header>
+        <el-menu mode="horizontal">
+          <el-menu-item index="1">
+            <router-link to="/">运行</router-link>
+          </el-menu-item>
+          <el-menu-item index="2">
+            <router-link to="/record">运行记录</router-link>
+          </el-menu-item>
+        </el-menu>
+      </el-header>
+      <el-main>
+        <!-- 在这里添加你的记账信息 -->
+        <router-view/>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
 export default {
   name: 'App',
-  components: {
-    HelloWorld
-  }
 }
 </script>
 
-<style>
+<style scoped>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
