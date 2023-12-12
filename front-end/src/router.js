@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import ExecutePage from './components/ExecutePage.vue'
+import PresetPage from './components/PresetPage.vue'
 import RecordPage from './components/RecordPage.vue'
 
 
@@ -10,8 +10,8 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'executePage',
-      component: ExecutePage
+      name: 'presetPage',
+      component: PresetPage
     },
     {
       path: '/record',

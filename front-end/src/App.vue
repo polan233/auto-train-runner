@@ -5,7 +5,7 @@
       <el-header>
         <el-menu mode="horizontal">
           <el-menu-item index="1">
-            <router-link to="/">运行</router-link>
+            <router-link to="/">预设命令列表</router-link>
           </el-menu-item>
           <el-menu-item index="2">
             <router-link to="/record">运行记录</router-link>
