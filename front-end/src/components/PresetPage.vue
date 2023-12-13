@@ -56,28 +56,37 @@
       </el-table-column>
       <el-table-column label="详情" width="180">
         <template slot-scope="scope">
-          <el-popover trigger="hover" placement="top">
-            <p>代码：</p>
-            <p>{{scope.row.final_code}}</p>
+          <el-popover width="530" trigger="click" placement="left">
+            <el-collapse v-model="activeInfos">
+              <el-collapse-item title="前置操作" name="1">
+                <div v-for="(line, index) in scope.row.pre_code.split('\n')" :key="index">
+                  {{ line }}
+                </div>
+              </el-collapse-item>
+              <el-collapse-item title="编译器路径" name="2">
+                <div>{{ scope.row.interpreter_path }}</div>
+              </el-collapse-item>
+              <el-collapse-item title="文件路径" name="3">
+                <div>{{ scope.row.script_path }}</div>
+              </el-collapse-item>
+              <el-collapse-item title="参数" name="4">
+                <div>{{ scope.row.parameters }}</div>
+              </el-collapse-item>
+              <el-collapse-item title="最终代码" name="5">
+                <pre>{{ scope.row.final_code }}</pre>
+              </el-collapse-item>
+            </el-collapse>
             <el-button slot="reference">查看详情</el-button>
           </el-popover>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="210">
-      <template slot-scope="scope">
-        <el-button
-          size="mini"
-          type="success"
-          @click="handleRun(scope.$index, scope.row)">运行</el-button>
-        <el-button
-          size="mini"
-          @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
-        <el-button
-          size="mini"
-          type="danger"
-          @click="handleDelete(scope.$index, scope.row)">删除</el-button>
-      </template>
-    </el-table-column>
+        <template slot-scope="scope">
+          <el-button size="mini" type="success" @click="handleRun(scope.$index, scope.row)">运行</el-button>
+          <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+          <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
 
@@ -103,6 +112,7 @@ export default {
       },
       savePresetDialogVisible: false, // 保存预设弹窗的可见状态
       presets: [],
+      activeInfos: [],
     };
   },
   mounted() {
@@ -145,8 +155,7 @@ export default {
     addParameter() {
       this.form.parametersList.push('');
     },
-    executeCode() {
-      const code = this.finalCode; // 获取代码
+    executeCode(code) {
 
       axios.post('http://127.0.0.1:5000/execute', null, {
         params: {
@@ -168,16 +177,23 @@ export default {
       this.savePresetDialogVisible = true;
     },
     savePreset() {
+      const name = this.form.name;
+      const preCodeList = JSON.stringify(this.form.preCodeList);
+      const interpreterPath = this.form.interpreterPath;
+      const scriptPath = this.form.scriptPath;
+      const parametersList = JSON.stringify(this.form.parametersList);
+      const finalCode = this.finalCode;
+      const description = this.form.description;
 
       axios.post('http://127.0.0.1:5000/savePreset', null, {
         params: {
-          name: this.form.name,
-          preCodeList: this.form.preCodeList,
-          interpreterPath: this.form.interpreterPath,
-          scriptPath: this.form.scriptPath,
-          parametersList: this.form.parametersList,
-          finalCode: this.finalCode,
-          description: this.form.description,
+          name: name,
+          preCodeList: preCodeList,
+          interpreterPath: interpreterPath,
+          scriptPath: scriptPath,
+          parametersList: parametersList,
+          finalCode: finalCode,
+          description: description,
         }
       })
         .then(response => {
@@ -189,6 +205,7 @@ export default {
             message: '预设保存成功！',
             type: 'success'
           });
+          this.getPresets();
         })
         .catch(error => {
           // 处理错误
@@ -196,7 +213,7 @@ export default {
           console.error(error);
         });
 
-      this.getPresets();
+
       // 保存完成后关闭弹窗
       this.savePresetDialogVisible = false;
     },
@@ -209,6 +226,24 @@ export default {
           console.error(error);
         });
     },
+    handleRun(index, row) {
+      this.executeCode(row.final_code);
+    },
+    handleDelete(index, row) {
+      axios.get('http://127.0.0.1:5000/deletePreset', {
+        params: {
+          id: row.id
+        }
+      })
+        .then(response => {
+          console.log(response.data.message);
+          // 执行其他操作或更新页面
+          this.getPresets();
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
   }
 }
 </script>

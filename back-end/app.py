@@ -3,6 +3,7 @@ import sqlite3
 import datetime
 import subprocess
 from flask_cors import CORS
+import json
 
 
 # 连接数据库
@@ -74,13 +75,13 @@ def execute_code():
 def save_preset():
     # 获取请求参数
     name = request.args.get('name')
-    pre_codes = request.args.getlist('preCode')
+    pre_codes = json.loads(request.args.get('preCodeList'))
     interpreter_path = request.args.get('interpreterPath')
     script_path = request.args.get('scriptPath')
-    parameters = request.args.getlist('parameters')
+    parameters = json.loads(request.args.get('parametersList'))
     final_code = request.args.get('finalCode')
     description = request.args.get('description')
-
+    print("接收到参数", name, pre_codes, interpreter_path, script_path, parameters, final_code, description)
     # 连接数据库
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
@@ -122,6 +123,23 @@ def get_presets():
     conn.close()
 
     return jsonify(presets_list)
+
+@app.route('/deletePreset', methods=['GET'])
+def delete_preset():
+    # 获取请求中的参数 id
+    id = request.args.get('id')
+
+    # 连接数据库
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    # 删除对应的行
+    cursor.execute('DELETE FROM presets WHERE id = ?', (id))
+    conn.commit()
+
+    conn.close()
+
+    return jsonify({'message': 'Preset deleted successfully'})
 
 if __name__ == '__main__':
     app.run(debug=True)
