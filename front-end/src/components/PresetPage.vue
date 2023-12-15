@@ -3,6 +3,36 @@
     <div class="presetButtons">
       <el-button type="primary" @click="showSavePresetDialog">添加预设命令</el-button>
     </div>
+    <!-- controlPanel 对话框 -->
+    <el-dialog title="控制面板" :visible.sync="controlPanel.show" :before-close="handlePanelClose">
+      <el-form>
+        <div v-for="(command, index) in controlPanel.presetData.pre_code.split('\n')" :key="index"
+          class="code-display terminal-style">
+          <pre>{{ "前置操作:" + command }}</pre>
+        </div>
+        <div class="code-display terminal-style">
+          <div>{{ "解释器路径:" + controlPanel.presetData.interpreter_path }}</div>
+        </div>
+        <div class="code-display terminal-style">
+          <div>{{ "文件路径:" + controlPanel.presetData.script_path }}</div>
+        </div>
+        <el-divider content-position="left">参数设置</el-divider>
+        <el-form-item v-for="parameter in controlPanel.parameters" :key="parameter.name" :label="parameter.name">
+          <el-input style="width:90%" v-model="parameter.value"></el-input>
+        </el-form-item>
+        <el-divider content-position="left">最终指令</el-divider>
+        <div class="code-display terminal-style">
+          <pre>{{ panelCode }}</pre>
+        </div>
+        <el-divider content-position="left">执行次数</el-divider>
+        <el-form-item>
+          <el-input-number v-model="controlPanel.executionCount" :min="1" :max="100"></el-input-number>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="executeCode">开始运行</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
     <el-dialog title="保存预设" :visible.sync="savePresetDialogVisible">
       <el-form ref="form" :model="form" label-width="120px">
         <el-form-item label="预设名称">
@@ -60,20 +90,24 @@
             <el-collapse v-model="activeInfos">
               <el-collapse-item title="前置操作" name="1">
                 <div v-for="(line, index) in scope.row.pre_code.split('\n')" :key="index">
-                  {{ line }}
+                  <div class="code-display terminal-style">
+                    {{ line }}
+                  </div>
                 </div>
               </el-collapse-item>
               <el-collapse-item title="编译器路径" name="2">
-                <div>{{ scope.row.interpreter_path }}</div>
+                <div class="code-display terminal-style">{{ scope.row.interpreter_path }}</div>
               </el-collapse-item>
               <el-collapse-item title="文件路径" name="3">
-                <div>{{ scope.row.script_path }}</div>
+                <div class="code-display terminal-style">{{ scope.row.script_path }}</div>
               </el-collapse-item>
               <el-collapse-item title="参数" name="4">
-                <div>{{ scope.row.parameters }}</div>
+                <div class="code-display terminal-style">{{ scope.row.parameters }}</div>
               </el-collapse-item>
               <el-collapse-item title="最终代码" name="5">
-                <pre>{{ scope.row.final_code }}</pre>
+                <div class="code-display terminal-style">
+                  <pre>{{ scope.row.final_code }}</pre>
+                </div>
               </el-collapse-item>
             </el-collapse>
             <el-button slot="reference">查看详情</el-button>
@@ -82,8 +116,7 @@
       </el-table-column>
       <el-table-column label="操作" width="210">
         <template slot-scope="scope">
-          <el-button size="mini" type="success" @click="handleRun(scope.$index, scope.row)">运行</el-button>
-          <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+          <el-button size="mini" type="success" @click="handlePanelOpen(scope.$index, scope.row)">运行</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -113,6 +146,14 @@ export default {
       savePresetDialogVisible: false, // 保存预设弹窗的可见状态
       presets: [],
       activeInfos: [],
+      controlPanel: {
+        presetData: {
+          pre_code: '',
+        },
+        show: false,
+        parameters: [],// {code,value,value} type是数值型或者布尔型 value为true false或者数字或者数字范围
+        executionCount: 1,
+      }
     };
   },
   mounted() {
@@ -144,6 +185,34 @@ export default {
         }
       });
       return formattedLines.join('\n');
+    },
+
+    panelCode() {
+      const preCode = this.controlPanel.presetData.pre_code;
+      const interpreterPath = this.controlPanel.presetData.interpreter_path;
+      const scriptPath = this.controlPanel.presetData.script_path;
+      const parameters = this.controlPanel.parameters
+        .filter(parameter => parameter.value !== '') // 过滤掉值为空的参数
+        .map(parameter => {
+          if (parameter.value == 'true' || parameter.value == 'false') {
+            if (parameter.value == 'true') {
+              return parameter.name;
+            } else {
+              return '';
+            }
+          } else {
+            return `${parameter.name} ${parameter.value}`;
+          }
+        })
+        .join(' ');
+
+      let code = '';
+      if (preCode !== '') {
+        code += `${preCode}\n`;
+      }
+      code += `${interpreterPath} ${scriptPath} ${parameters}`;
+
+      return code;
     }
   },
 
@@ -155,18 +224,31 @@ export default {
     addParameter() {
       this.form.parametersList.push('');
     },
-    executeCode(code) {
-
+    executeCode() {
+      const code = this.panelCode;
+      const time = this.controlPanel.executionCount;
+      this.controlPanel.presetData = {
+        pre_code: '',
+      };
+      this.controlPanel.parameters = [];
+      this.controlPanel.finalCode = '';
+      this.controlPanel.executionCount = 1;
+      this.controlPanel.show = false;
+      this.$message({
+        message: '开始运行，请去运行记录界面查看结果！',
+        type: 'success'
+      });
       axios.post('http://127.0.0.1:5000/execute', null, {
         params: {
-          code: code
+          code: code,
+          time: time
         }
       })
         .then(response => {
           // 处理接口返回的结果
-          const result = response.data;
+          const run_id = response.data;
           // 进行其他操作
-          console.log(result);
+          console.log(run_id);
         })
         .catch(error => {
           // 处理错误
@@ -243,17 +325,55 @@ export default {
         .catch(error => {
           console.error(error);
         });
-    }
+    },
+    handlePanelOpen(index, row) {
+      console.log("当前数据", row)
+      this.controlPanel.presetData = row;
+      this.controlPanel.show = true;
+      this.controlPanel.parameters = [];
+      this.controlPanel.finalCode = '';
+      const parameters = row.parameters.split(' ');
+      for (let i = 0; i < parameters.length; i++) {
+        const parameter = parameters[i];
+        if (parameter.startsWith('-')) {
+          // 参数
+          const name = parameter;
+          const type = '';
+          const value = '';
+          this.controlPanel.parameters.push({
+            name,
+            type,
+            value
+          });
+        }
+      }
+    },
+    handlePanelClose(done) {
+      this.$confirm('确认关闭？')
+        .then(_ => {
+          console.log(_)
+          this.controlPanel.presetData = {
+            pre_code: '',
+          };
+          this.controlPanel.parameters = [];
+          this.controlPanel.finalCode = '';
+          this.controlPanel.executionCount = 1;
+          this.controlPanel.show = false;
+          done();
+        })
+        .catch(_ => { console.log(_) });
+
+    },
   }
 }
 </script>
 
 <style>
 .code-display {
-  margin-top: 20px;
+  margin-top: 0px;
   background-color: #000;
   padding: 10px;
-  border-radius: 4px;
+
   color: #fff;
   font-family: 'Courier New', monospace;
   text-align: left;

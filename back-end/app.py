@@ -11,12 +11,12 @@ conn = sqlite3.connect('database.db')
 cursor = conn.cursor()
 # 创建表格
 cursor.execute('''
-    CREATE TABLE IF NOT EXISTS code_history (
-
+    CREATE TABLE IF NOT EXISTS runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         code TEXT,
         run_datetime TEXT,
-        result TEXT
+        result TEXT,
+        status varchar(20)
     )
 ''')
 # 创建表格
@@ -49,27 +49,35 @@ def execute_code():
     cursor = conn.cursor()
 
     code = request.args.get('code')
+    exe_time = request.args.get('time')
     print("接收到代码：", code)
     run_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    result = ''
-    
+    result_str = ''
+
+    # 将代码和日期时间插入到数据库中
+    cursor.execute('INSERT INTO runs (code, run_datetime, result, status) VALUES (?, ?, ?, ?)', (code, run_datetime, result_str, "running"))
+    run_id = cursor.lastrowid  # 获取插入数据的id
+    conn.commit()
+
     # 拆分多行代码为一个指令列表
     commands = code.strip().split('\n')
-    
-    # 逐行执行指令
-    for command in commands:
-        try:
-            output = subprocess.check_output(command, shell=True, text=True)
-            result += f'\n{output}'
-        except subprocess.CalledProcessError as e:
-            result += f'\nError executing command: {command}\n{e.output}'
-    
-    # 将代码和日期时间插入到数据库中
-    cursor.execute('INSERT INTO code_history (code, run_datetime, result) VALUES (?, ? ,?)', (code, run_datetime, result))
+    statues = "success"
+    for _ in range(int(exe_time)):
+        # 逐行执行指令
+        for index, cmd in enumerate(commands):
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            # 命令执行的根目录为项目文件夹根目录
+            result_str += f'\n------------------第{_+1}次运行第{index+1}条指令-----------------------\n{result.stdout}'
+            if result.returncode != 0:
+                statues = "error"
+                break
+    print("结果",result_str)
+    # 更新结果和状态到数据库中
+    cursor.execute('UPDATE runs SET result = ?, status = ? WHERE id = ?', (result_str, statues, run_id))
     conn.commit()
     conn.close()
 
-    return result
+    return str(run_id)  # 返回插入数据的id
 
 @app.route('/savePreset', methods=['POST'])
 def save_preset():
