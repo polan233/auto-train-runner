@@ -18,16 +18,18 @@
         </div>
         <el-divider content-position="left">参数设置</el-divider>
         <el-form-item v-for="parameter in controlPanel.parameters" :key="parameter.name" :label="parameter.name">
-          <el-input style="width:90%" v-model="parameter.value"></el-input>
-          <el-tooltip class="item" effect="dark" placement="top" style="margin: 4px;">
-            <div slot="content">布尔型参数输入true，false<br/>
-              数值参数请输入数字，<br/>
-              其他类型参数请用双引号包裹，<br/>
-              如果需要自动执行某范围的参数，<br/>
-              请使用 %1%10%1 ，表示从1到10的所有参数，step=1<br/>
-              或者使用 #参数一,#参数二 ...</div>
-            <i class="el-icon-question"></i>
-          </el-tooltip>
+          <div class="form-item">
+            <el-tooltip class="tooltip" effect="dark" placement="top">
+              <div slot="content">布尔型参数输入true，false<br />
+                数值参数请输入数字，<br />
+                其他类型参数请用双引号包裹，<br />
+                如果需要自动执行某范围的参数，<br />
+                请使用 #参数一#参数二 ...<br />
+                </div>
+              <i class="el-icon-question"></i>
+            </el-tooltip>
+            <el-input class="input" v-model="parameter.value"></el-input>
+          </div>
         </el-form-item>
         <el-divider content-position="left">最终指令</el-divider>
         <div class="code-display terminal-style">
@@ -42,6 +44,7 @@
         </el-form-item>
       </el-form>
     </el-dialog>
+    <!--预设保存 对话框-->
     <el-dialog title="保存预设" :visible.sync="savePresetDialogVisible">
       <el-form ref="form" :model="form" label-width="120px">
         <el-form-item label="预设名称">
@@ -179,7 +182,7 @@ export default {
       if (preCode !== '') {
         code += `${preCode}\n`;
       }
-      code += `${interpreterPath} ${scriptPath} ${parameters}`;
+      code += `${interpreterPath} ${scriptPath} \n 参数：${parameters}`;
 
       return code;
     },
@@ -200,31 +203,48 @@ export default {
       const preCode = this.controlPanel.presetData.pre_code;
       const interpreterPath = this.controlPanel.presetData.interpreter_path;
       const scriptPath = this.controlPanel.presetData.script_path;
-      const parameters = this.controlPanel.parameters
-        .filter(parameter => parameter.value !== '') // 过滤掉值为空的参数
-        .map(parameter => {
-          if (parameter.value == 'true' || parameter.value == 'false') {
-            if (parameter.value == 'true') {
-              return parameter.name;
-            } else {
-              return '';
-            }
-          } else {
-            return `${parameter.name} ${parameter.value}`;
-          }
-        })
-        .join(' ');
-
-      let code = '';
+      let cur_code = '';
       if (preCode !== '') {
-        code += `${preCode}\n`;
+        cur_code += `${preCode}\n`;
       }
-      code += `${interpreterPath} ${scriptPath} ${parameters}`;
+      let base_code = `${interpreterPath} ${scriptPath} `;
 
-      return code;
-    }
+      const parameters = this.controlPanel.parameters.filter(parameter => parameter.value !== '');
+      console.log("原始参数", parameters)
+      let parameter_list = []
+      for (let i = 0; i < parameters.length; i++) {
+        let p_list = []
+        const p_name = parameters[i].name;
+        const p_value = parameters[i].value;
+        if (p_value.startsWith('%')) {
+          // 数值范围
+          const range = p_value.split('%');
+          const start = range[1];
+          const end = range[2];
+          const step = range[3] || 1;
+          for (let value = start; value <= end; value += step) {
+            p_list.push(`${p_name} ${value}`);
+          }
+        } else if (p_value.startsWith('#')) {
+          // 多个参数
+          const values = p_value.split('#');
+          for (let j = 1; j < values.length; j++) {
+            const value = values[j];
+            p_list.push(this.processPValue(p_name, value));
+          }
+        } else {
+          // 单个参数
+          p_list.push(this.processPValue(p_name, p_value))
+        }
+        parameter_list.push(p_list);
+      }
+      console.log("参数列表", parameter_list)
+      let codes = this.generateCode(base_code, parameter_list)
+      console.log("生成的代码", codes)
+      console.log("最终的代码",cur_code + codes.join('\n'))
+      return cur_code + codes.join('\n');
+    },
   },
-
   methods: {
     addPreCode() {
       this.form.preCodeList.push('');
@@ -373,11 +393,51 @@ export default {
         .catch(_ => { console.log(_) });
 
     },
+    processPValue(p_name, p_value) {
+      let p_name_value = '';
+      if(p_value==''){
+        return p_name_value;
+      }
+      if (p_value == 'true' || p_value == 'false') {
+        if (p_value == 'true') {
+          p_name_value = `${p_name}`;
+        } else {
+          p_name_value = ' ';
+        }
+      } else if (p_value.startsWith('"') && p_value.endsWith('"')) {
+        let newValue = p_value.replace(/^"(.*)"$/, '$1');
+        p_name_value = `${p_name} ${newValue}`;
+      } else {
+        p_name_value = `${p_name} ${p_value}`;
+      }
+      return p_name_value;
+    },
+    generateCode(baseCode, parameter_list) {
+      let codes = []
+      if (parameter_list.length == 0) {
+        codes.push(baseCode)
+        return codes
+      }
+      if (parameter_list.length == 1) {
+        for (let i = 0; i < parameter_list[0].length; i++) {
+          codes.push(baseCode + ' ' + parameter_list[0][i])
+        }
+      }
+      else {
+        for (let i = 0; i < parameter_list[0].length; i++) {
+          let temp_code = baseCode + ' ' + parameter_list[0][i]
+          let temp_list = parameter_list.slice(1)
+          let temp_codes = this.generateCode(temp_code, temp_list)
+          codes.push(...temp_codes)
+        }
+      }
+      return codes
+    },
   }
 }
 </script>
 
-<style>
+<style scoped>
 .code-display {
   margin-top: 0px;
   background-color: #000;
@@ -409,5 +469,21 @@ export default {
   padding: 15px;
   padding-bottom: 20px;
   margin-right: 40px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input {
+  flex-grow: 2;
+}
+
+.tooltip {
+  margin: 4px;
 }
 </style>
