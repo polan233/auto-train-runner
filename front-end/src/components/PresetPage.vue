@@ -19,6 +19,15 @@
         <el-divider content-position="left">参数设置</el-divider>
         <el-form-item v-for="parameter in controlPanel.parameters" :key="parameter.name" :label="parameter.name">
           <el-input style="width:90%" v-model="parameter.value"></el-input>
+          <el-tooltip class="item" effect="dark" placement="top" style="margin: 4px;">
+            <div slot="content">布尔型参数输入true，false<br/>
+              数值参数请输入数字，<br/>
+              其他类型参数请用双引号包裹，<br/>
+              如果需要自动执行某范围的参数，<br/>
+              请使用 %1%10%1 ，表示从1到10的所有参数，step=1<br/>
+              或者使用 #参数一,#参数二 ...</div>
+            <i class="el-icon-question"></i>
+          </el-tooltip>
         </el-form-item>
         <el-divider content-position="left">最终指令</el-divider>
         <div class="code-display terminal-style">
