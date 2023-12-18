@@ -76,6 +76,8 @@ def execute_code():
                 result_str += f'\n!!!!!!!!!!!!!!!!!!!!!!!!!运行报错!!!!!!!!!!!!!!!!!!!!!!!\n{result.stderr}'
                 statues = "error"
                 break
+        cursor.execute('UPDATE runs SET result = ?, status = ? WHERE id = ?', (result_str, "running", run_id))
+        conn.commit()
     print("结果",result_str)
     # 更新结果和状态到数据库中
     cursor.execute('UPDATE runs SET result = ?, status = ? WHERE id = ?', (result_str, statues, run_id))

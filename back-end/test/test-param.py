@@ -1,4 +1,5 @@
 import argparse
+import time
 
 # Create an ArgumentParser object
 parser = argparse.ArgumentParser()
@@ -15,3 +16,4 @@ args = parser.parse_args()
 print(f'Flag: {args.flag}')
 print(f'Number: {args.number}')
 print(f'Array: {args.array}')
+time.sleep(30)

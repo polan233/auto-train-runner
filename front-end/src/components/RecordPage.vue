@@ -6,7 +6,9 @@
                 <el-button @click="applyNameFilter" size="small" type="primary" plain>应用名称筛选</el-button>
                 <el-button @click="clearNameFilter" size="small" type="primary" plain>清除名称筛选</el-button>
             </div>
+
             <el-button @click="clearFilter" icon="el-icon-refresh-left" type="primary">清除所有过滤</el-button>
+            <el-button @click="refreshData" icon="el-icon-refresh" type="primary" plain>刷新</el-button>
         </div>
         <el-table max-height="850" stripe border ref="filterTable" :data="filteredData" style="width: 100%">
             <el-table-column prop="run_datetime" label="运行日期" sortable width="180" column-key="run_datetime"
@@ -83,6 +85,9 @@ export default {
         this.loadRunsData();
     },
     methods: {
+        refreshData() {
+            this.loadRunsData();
+        },
         clearNameFilter() {
             this.nameFilterData = '';
             this.filteredData = this.tableData;
@@ -218,10 +223,12 @@ export default {
     font-family: 'Courier New', monospace;
     text-align: left;
     line-height: 1.3;
-    overflow-x: scroll; /* 添加横向滚动条 */
-    overflow-y: scroll; /* 添加纵向滚动条 */
+    overflow-x: scroll;
+    /* 添加横向滚动条 */
+    overflow-y: scroll;
+    /* 添加纵向滚动条 */
 }
-.name-filters{
+
+.name-filters {
     margin-left: 5px;
-}
-</style>
+}</style>
