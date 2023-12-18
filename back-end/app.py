@@ -55,36 +55,35 @@ def execute_code():
     name=request.args.get('name')
     description=request.args.get('description')
     print("接收到代码：", code)
-    run_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    result_str = ''
-
-    # 将代码和日期时间插入到数据库中
-    cursor.execute('INSERT INTO runs (code, run_datetime, result, status ,name,description) VALUES (?, ?, ?, ?,?,?)', (code, run_datetime, result_str, "running",name,description))
-    run_id = cursor.lastrowid  # 获取插入数据的id
-    conn.commit()
+    
 
     # 拆分多行代码为一个指令列表
     commands = code.strip().split('\n')
-    statues = "success"
+
     for _ in range(int(exe_time)):
-        # 逐行执行指令
+
         for index, cmd in enumerate(commands):
+                    # 逐行执行指令
+            run_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            result_str = ''
+            # 将代码和日期时间插入到数据库中
+            cursor.execute('INSERT INTO runs (code, run_datetime, result, status ,name,description) VALUES (?, ?, ?, ?,?,?)', (cmd, run_datetime, result_str, "running",name,description))
+            run_id = cursor.lastrowid  # 获取插入数据的id
+            conn.commit()
             result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            status = "success"
             # 命令执行的根目录为项目文件夹根目录
-            result_str += f'\n------------------第{_+1}次运行第{index+1}条指令-----------------------\n{result.stdout}'
+            result_str = f'\n------------------第{_+1}次运行第{index+1}条指令-----------------------\n{result.stdout}'
             if result.returncode != 0:
-                result_str += f'\n!!!!!!!!!!!!!!!!!!!!!!!!!运行报错!!!!!!!!!!!!!!!!!!!!!!!\n{result.stderr}'
-                statues = "error"
+                result_str = f'\n!!!!!!!!!!!!!!!!!!!!!!!!!运行报错!!!!!!!!!!!!!!!!!!!!!!!\n{result.stderr}'
+                status = "error"
                 break
-        cursor.execute('UPDATE runs SET result = ?, status = ? WHERE id = ?', (result_str, "running", run_id))
-        conn.commit()
-    print("结果",result_str)
-    # 更新结果和状态到数据库中
-    cursor.execute('UPDATE runs SET result = ?, status = ? WHERE id = ?', (result_str, statues, run_id))
-    conn.commit()
+            cursor.execute('UPDATE runs SET result = ?, status = ? WHERE id = ?', (result_str, status, run_id))
+            conn.commit()
+            print("结果",result_str)
     conn.close()
 
-    return str(run_id)  # 返回插入数据的id
+    return "运行完毕"
 
 @app.route('/savePreset', methods=['POST'])
 def save_preset():
