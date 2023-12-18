@@ -25,7 +25,7 @@
                 其他类型参数请用双引号包裹，<br />
                 如果需要自动执行某范围的参数，<br />
                 请使用 #参数一#参数二 ...<br />
-                </div>
+              </div>
               <i class="el-icon-question"></i>
             </el-tooltip>
             <el-input class="input" v-model="parameter.value"></el-input>
@@ -88,7 +88,6 @@
     </el-dialog>
 
 
-
     <el-table :data="presets" border>
       <el-table-column prop="name" width="280" label="名称"></el-table-column>
       <el-table-column prop="description" label="说明">
@@ -126,7 +125,7 @@
           </el-popover>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="210">
+      <el-table-column fixed="right" label="操作" width="210">
         <template slot-scope="scope">
           <el-button size="mini" type="success" @click="handlePanelOpen(scope.$index, scope.row)">运行</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">删除</el-button>
@@ -241,7 +240,7 @@ export default {
       console.log("参数列表", parameter_list)
       let codes = this.generateCode(base_code, parameter_list)
       console.log("生成的代码", codes)
-      console.log("最终的代码",cur_code + codes.join('\n'))
+      console.log("最终的代码", cur_code + codes.join('\n'))
       return cur_code + codes.join('\n');
     },
   },
@@ -256,6 +255,8 @@ export default {
     executeCode() {
       const code = this.panelCode;
       const time = this.controlPanel.executionCount;
+      const name = this.controlPanel.presetData.name;
+      const description = this.controlPanel.presetData.description;
       this.controlPanel.presetData = {
         pre_code: '',
       };
@@ -269,6 +270,8 @@ export default {
       });
       axios.post('http://127.0.0.1:5000/execute', null, {
         params: {
+          name: name,
+          description: description,
           code: code,
           time: time
         }
@@ -332,27 +335,43 @@ export default {
       axios.get('http://127.0.0.1:5000/getPresets')
         .then(response => {
           this.presets = response.data;
+
         })
         .catch(error => {
           console.error(error);
         });
     },
-    handleRun(index, row) {
-      this.executeCode(row.final_code);
-    },
     handleDelete(index, row) {
-      axios.get('http://127.0.0.1:5000/deletePreset', {
-        params: {
-          id: row.id
-        }
+      this.$confirm('是否确认删除预设？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
       })
-        .then(response => {
-          console.log(response.data.message);
-          // 执行其他操作或更新页面
-          this.getPresets();
+        .then(() => {
+          axios.post('http://127.0.0.1:5000/deletePreset', null,{
+            params: {
+              id: row.id
+            }
+          })
+            .then(response => {
+              console.log(response.data.message);
+              // 执行其他操作或更新页面
+              this.getPresets();
+              this.$message({
+                type: 'success',
+                message: '预设删除成功'
+              });
+            })
+            .catch(error => {
+              console.error(error);
+              this.$message({
+                type: 'error',
+                message: '预设删除失败'
+              });
+            });
         })
-        .catch(error => {
-          console.error(error);
+        .catch(() => {
+          // 用户点击了取消按钮，不执行删除操作
         });
     },
     handlePanelOpen(index, row) {
@@ -395,7 +414,7 @@ export default {
     },
     processPValue(p_name, p_value) {
       let p_name_value = '';
-      if(p_value==''){
+      if (p_value == '') {
         return p_name_value;
       }
       if (p_value == 'true' || p_value == 'false') {
