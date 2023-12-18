@@ -18,3 +18,6 @@ front-end/*.js
 # 如果使用 TypeScript，忽略编译产生的 .d.ts 文件
 front-end/*.d.ts
 *.db
+
+# 忽略运行记录
+back-end/runs

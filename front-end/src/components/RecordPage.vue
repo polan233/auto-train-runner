@@ -26,7 +26,7 @@
             <el-table-column label="查看代码" width="110">
                 <template slot-scope="scope">
                     <el-popover width="530" trigger="click" placement="left">
-                        <div class="code-display terminal-style">{{ scope.row.code }}</div>
+                        <div class="code-display ">{{ scope.row.code }}</div>
                         <el-button slot="reference" size="small">查看代码</el-button>
                     </el-popover>
                 </template>
@@ -34,7 +34,7 @@
             <el-table-column label="查看结果" width="110">
                 <template slot-scope="scope">
                     <el-popover width="530" trigger="click" placement="left">
-                        <div class="code-display terminal-style">{{ scope.row.result }}</div>
+                        <div class="code-display ">{{ scope.row.result }}</div>
                         <el-button slot="reference" size="small">查看结果</el-button>
                     </el-popover>
                 </template>
@@ -211,12 +211,15 @@ export default {
     margin-top: 0px;
     background-color: #000;
     padding: 10px;
-    width: max-content;
+    max-width: 800px;
     white-space: pre-wrap;
+    max-height: 600px;
     color: #fff;
     font-family: 'Courier New', monospace;
     text-align: left;
     line-height: 1.3;
+    overflow-x: scroll; /* 添加横向滚动条 */
+    overflow-y: scroll; /* 添加纵向滚动条 */
 }
 .name-filters{
     margin-left: 5px;

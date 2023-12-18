@@ -73,6 +73,7 @@ def execute_code():
             # 命令执行的根目录为项目文件夹根目录
             result_str += f'\n------------------第{_+1}次运行第{index+1}条指令-----------------------\n{result.stdout}'
             if result.returncode != 0:
+                result_str += f'\n!!!!!!!!!!!!!!!!!!!!!!!!!运行报错!!!!!!!!!!!!!!!!!!!!!!!\n{result.stderr}'
                 statues = "error"
                 break
     print("结果",result_str)
