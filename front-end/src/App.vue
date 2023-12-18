@@ -3,12 +3,13 @@
     <h2>命令行程序自动运行系统</h2>
     <el-container>
       <el-header>
-        <el-menu mode="horizontal">
-          <el-menu-item index="1">
-            <router-link to="/">预设命令列表</router-link>
+        <el-menu mode="horizontal" router
+        :default-active="$route.path">
+          <el-menu-item index="/">
+            <span>预设命令列表</span>
           </el-menu-item>
-          <el-menu-item index="2">
-            <router-link to="/record">运行记录</router-link>
+          <el-menu-item index="/record">
+            <span>运行记录</span>
           </el-menu-item>
         </el-menu>
       </el-header>
@@ -34,5 +35,9 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+router-link{
+  width:max-content;
+  height: 60px;
 }
 </style>
