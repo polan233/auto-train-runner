@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <h2>命令行程序自动运行系统</h2>
+    <h2>命令行程序批量运行系统</h2>
     <el-container>
       <el-header>
         <el-menu mode="horizontal" router
