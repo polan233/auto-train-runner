@@ -21,3 +21,4 @@ front-end/*.d.ts
 
 # 忽略运行记录
 back-end/runs
+back-end/runs-*/

@@ -65,9 +65,28 @@
           <el-input v-model="form.scriptPath"></el-input>
         </el-form-item>
         <el-form-item label="参数输入">
-          <div>
+
+          <div class="flex-container">
+            <el-tooltip class="tooltip-1" effect="dark" placement="top">
+              <div slot="content">
+                参数名输入代码中的参数如--flag<br />
+                布尔型参数输入true，false<br />
+                数值参数请输入数字，<br />
+                其他类型参数请用双引号包裹，<br />
+                如果需要自动执行某范围的参数，<br />
+                请使用 #参数一#参数二 ...<br />
+              </div>
+              <i class="el-icon-question"></i>
+            </el-tooltip>
             <div v-for="(param, index) in form.parametersList" :key="index">
-              <el-input v-model="form.parametersList[index]"></el-input>
+              <div class="paramInput">
+                <div class="paramName">
+                  <el-input placeholder="参数名" v-model="form.parametersList[index].name"></el-input>
+                </div>
+                <div class="paramValue">
+                  <el-input placeholder="默认值" v-model="form.parametersList[index].value"></el-input>
+                </div>
+              </div>
             </div>
             <el-button type="text" @click="addParameter">添加参数</el-button>
           </div>
@@ -150,7 +169,7 @@ export default {
         preCodeList: [''], // 初始行
         interpreterPath: '', // 解释器路径
         scriptPath: '',
-        parametersList: [''], // 初始行
+        parametersList: [{ name: '', value: '' }], // 初始行
         name: '',
         description: '',
       },
@@ -175,13 +194,13 @@ export default {
       const preCode = this.form.preCodeList.filter(code => code !== '').join('\n');
       const interpreterPath = this.form.interpreterPath;
       const scriptPath = this.form.scriptPath;
-      const parameters = this.form.parametersList.join(' ');
+      const parameters = this.form.parametersList.map(param => `${param.name} ${param.value}`).join(' ');
 
       let code = '';
       if (preCode !== '') {
         code += `${preCode}\n`;
       }
-      code += `${interpreterPath} ${scriptPath} \n 参数：${parameters}`;
+      code += `${interpreterPath} ${scriptPath} ${parameters}`;
 
       return code;
     },
@@ -250,7 +269,7 @@ export default {
     },
 
     addParameter() {
-      this.form.parametersList.push('');
+      this.form.parametersList.push({ name: '', value: '' });
     },
     executeCode() {
       const code = this.panelCode;
@@ -348,7 +367,7 @@ export default {
         type: 'warning'
       })
         .then(() => {
-          axios.post('http://127.0.0.1:5000/deletePreset', null,{
+          axios.post('http://127.0.0.1:5000/deletePreset', null, {
             params: {
               id: row.id
             }
@@ -375,25 +394,25 @@ export default {
         });
     },
     handlePanelOpen(index, row) {
-      console.log("当前数据", row)
+      console.log("当前数据", row);
       this.controlPanel.presetData = row;
       this.controlPanel.show = true;
       this.controlPanel.parameters = [];
       this.controlPanel.finalCode = '';
-      const parameters = row.parameters.split(' ');
-      for (let i = 0; i < parameters.length; i++) {
-        const parameter = parameters[i];
-        if (parameter.startsWith('-')) {
-          // 参数
-          const name = parameter;
-          const type = '';
-          const value = '';
-          this.controlPanel.parameters.push({
-            name,
-            type,
-            value
-          });
-        }
+
+      const pNames = row.p_names.split(' ');
+      const pValues = row.p_values.split(' ');
+
+      for (let i = 0; i < pNames.length; i++) {
+        const name = pNames[i];
+        const value = pValues[i];
+        const type = '';
+
+        this.controlPanel.parameters.push({
+          name,
+          type,
+          value
+        });
       }
     },
     handlePanelClose(done) {
@@ -481,6 +500,23 @@ export default {
   margin-left: 30px;
 }
 
+.flex-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.paramInput {
+  flex: 1;
+  display: flex;
+  margin: 5px;
+}
+
+.paramName,
+.paramValue {
+  flex: 1;
+  margin-right: 10px;
+}
+
 .presetButtons {
   display: flex;
   justify-content: flex-end;
@@ -504,5 +540,10 @@ export default {
 
 .tooltip {
   margin: 4px;
+}
+
+.tooltip-1 {
+  margin: 4px;
+  align-self: flex-start;
 }
 </style>

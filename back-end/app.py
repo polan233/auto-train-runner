@@ -31,7 +31,9 @@ cursor.execute('''
         script_path TEXT,
         parameters TEXT,
         final_code TEXT,
-        description TEXT
+        description TEXT,
+        p_names TEXT,
+        p_values TEXT
     )
 ''')
 conn.commit()
@@ -96,14 +98,23 @@ def save_preset():
     final_code = request.args.get('finalCode')
     description = request.args.get('description')
     print("接收到参数", name, pre_codes, interpreter_path, script_path, parameters, final_code, description)
+    
+     # 将参数列表中的 name 和 value 分别用空格分隔
+    p_names = ' '.join([param['name'] for param in parameters])
+    p_values = ' '.join([param['value'] for param in parameters])
+    # 将参数列表中的 name 和 value 分别用空格分隔，并拼接为字符串
+    parameters_str = ' '.join([f"{param['name']} {param['value']}" for param in parameters])
+
+    
     # 连接数据库
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
 
 
     # 将数据插入数据库表中
-    cursor.execute('INSERT INTO presets (name, pre_code, interpreter_path, script_path, parameters,final_code,description) VALUES (?, ?, ?, ?, ?,?,?)',
-                   (name, '\n'.join(pre_codes), interpreter_path, script_path, ' '.join(parameters), final_code,description))
+    cursor.execute('INSERT INTO presets (name, pre_code, interpreter_path, script_path, parameters,final_code,description,p_names,p_values) \
+                    VALUES (?, ?, ?, ?, ?,?,?,?,?)',
+                   (name, '\n'.join(pre_codes), interpreter_path, script_path, parameters_str, final_code,description,p_names,p_values))
     conn.commit()
     conn.close()
 
@@ -131,7 +142,9 @@ def get_presets():
             'script_path': preset[4],
             'parameters': preset[5],
             'final_code': preset[6],
-            'description': preset[7]
+            'description': preset[7],
+            'p_names': preset[8],
+            'p_values': preset[9]
         }
         presets_list.append(preset_dict)
 
